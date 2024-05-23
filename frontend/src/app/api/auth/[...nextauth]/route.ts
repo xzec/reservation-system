@@ -1,7 +1,7 @@
 import CognitoProvider from "next-auth/providers/cognito";
 import { env } from "~/env.mjs";
 import NextAuth from "next-auth";
-import { authOptions } from "~/app/auth";
+import { authOptions } from "~/auth/auth";
 
 const handler = NextAuth({
   ...authOptions,

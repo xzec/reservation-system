@@ -1,5 +1,5 @@
-import AuthButton from "~/app/auth-button";
-import NextAuthProvider from "~/app/next-auth-provider";
+import AuthButton from "~/app/components/auth-button";
+import NextAuthProvider from "~/auth/next-auth-provider";
 
 export default async function Home() {
   return (
