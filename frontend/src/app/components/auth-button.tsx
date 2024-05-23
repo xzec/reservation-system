@@ -15,6 +15,8 @@ export default function AuthButton() {
     )
   }
 
+  if (session.status === 'loading') return '🔁 Loading...'
+
   return (
     <>
       Not signed in <br />
