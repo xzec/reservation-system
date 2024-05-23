@@ -14,13 +14,12 @@ import (
 type User struct {
 	Id            string    `json:"id"`
 	Email         string    `json:"email"`
-	EmailVerified string    `json:"emailVerified"`
+	EmailVerified bool      `json:"emailVerified"`
 	CreatedAt     time.Time `json:"createdAt"`
 	UpdatedAt     time.Time `json:"updatedAt"`
 }
 
 func main() {
-	fmt.Println("DATABASE_URL:", os.Getenv("DATABASE_URL"))
 	dbPool, err := pgxpool.New(context.Background(), os.Getenv("DATABASE_URL"))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
@@ -33,10 +32,10 @@ func main() {
 
 	router.HandleFunc("GET /users", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("GET /users")
-		rows, err := dbPool.Query(context.Background(), "select id, email from users")
+		rows, _ := dbPool.Query(context.Background(), "select id, email from users")
 		defer rows.Close()
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+		if rows.Err() != nil {
+			http.Error(w, rows.Err().Error(), http.StatusInternalServerError)
 			return
 		}
 		var dbUsers []User
@@ -86,19 +85,13 @@ func main() {
 		var user User
 		err = json.NewDecoder(r.Body).Decode(&user)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, "Failed to parse the request body.", http.StatusBadRequest)
 			return
 		}
 		fmt.Println("user=", user)
 
-		err = dbPool.QueryRow(context.Background(), "insert into users(email) values($1)", user.Email).Scan()
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
 		var dbUser User
-		err = dbPool.QueryRow(context.Background(), "select id, email, created_at from users where email=$1", user.Email).Scan(&dbUser.Id, &dbUser.Email, &dbUser.CreatedAt)
+		err = dbPool.QueryRow(context.Background(), "insert into users(email) values($1) returning  id, email, email_verified, created_at, updated_at", user.Email).Scan(&dbUser.Id, &dbUser.Email, &dbUser.EmailVerified, &dbUser.CreatedAt, &dbUser.UpdatedAt)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -116,12 +109,29 @@ func main() {
 		}
 	})
 
+	router.HandleFunc("PUT /users/{id}", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println("PUT /users/{id}", r.PathValue("id"))
+
+		var user User
+		err = json.NewDecoder(r.Body).Decode(&user)
+		if err != nil {
+			http.Error(w, "Failed to parse the request body."+err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		_, err = dbPool.Exec(context.Background(), "update users set email_verified=$1 where id=$2", user.EmailVerified, r.PathValue("id"))
+		if err != nil {
+			http.Error(w, "Failed to update a user "+r.PathValue("id")+". "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+	})
+
 	router.HandleFunc("DELETE /users/{id}", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("DELETE /users/{id}", r.PathValue("id"))
 
 		err = dbPool.QueryRow(context.Background(), "delete from users where id=$1", r.PathValue("id")).Scan()
 		if err != nil {
-			http.Error(w, "failed to delete user "+r.PathValue("id"), http.StatusInternalServerError)
+			http.Error(w, "Failed to delete a user "+r.PathValue("id"), http.StatusInternalServerError)
 			return
 		}
 		_, err = w.Write([]byte("user " + r.PathValue("id") + " was deleted"))
