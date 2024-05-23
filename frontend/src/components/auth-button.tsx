@@ -9,7 +9,7 @@ export default function AuthButton() {
   if (session.status === 'authenticated') {
     return (
       <>
-        {session?.data?.user?.name} <br />
+        {session.data?.user?.name} <br />
         <button onClick={() => signOut()}>Sign out 👋</button>
       </>
     )
