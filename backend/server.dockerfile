@@ -2,8 +2,7 @@ FROM golang:1.22.2
 
 WORKDIR /app
 # Download Go modules
-COPY go.mod ./
-RUN pwd
+COPY go.mod go.sum ./
 RUN go mod download
 
 # Copy the source code. Note the slash at the end, as explained in
