@@ -1,8 +1,7 @@
-import type {Adapter, AdapterAccount, AdapterSession, AdapterUser, VerificationToken} from "next-auth/adapters"
-import {Awaitable} from "next-auth"
-import {undefined, util} from "zod"
+import type { Adapter, AdapterAccount, AdapterSession, AdapterUser, VerificationToken } from "next-auth/adapters"
+import { Awaitable } from "next-auth"
 import resolveFetch from "~/utils/resolveFetch"
-import Omit = util.Omit;
+import { resolve } from "~/utils/resolve"
 
 type Options = {
   baseUrl: string
@@ -10,76 +9,74 @@ type Options = {
 }
 
 export default function CustomRestAdapter({ baseUrl, apiSecret }: Options): Adapter {
-  const fetcher = createFetcher(baseUrl, apiSecret)
+  const client = createFetchClient(baseUrl, apiSecret)
 
   return {
-    async createUser(user: Omit<AdapterUser, "id">) {
+    createUser(user) {
       console.log('createUser', user)
-      const res = await fetcher<AdapterUser>('POST', '/user', user)
-      return res
+      return client<AdapterUser>('POST', '/users', user)
     },
-    getUser(id: string): Awaitable<AdapterUser | null> {
+    getUser(id) {
       console.log('getUser', id)
-      return undefined
+      return client<AdapterUser | null>('GET', `/users/${id}`)
     },
-    getUserByEmail(email: string): Awaitable<AdapterUser | null> {
+    getUserByEmail(email) {
       console.log('getUserByEmail', email)
-      return undefined
+      return client<AdapterUser | null>('GET', `/users/email/${email}`)
     },
-    getUserByAccount(providerAccountId: Pick<AdapterAccount, "provider" | "providerAccountId">): Awaitable<AdapterUser | null> {
-      console.log('getUserByAccount', providerAccountId)
-      return undefined
+    getUserByAccount({ provider, providerAccountId }) {
+      console.log('getUserByAccount', { provider, providerAccountId })
+      return client<AdapterUser | null>('GET', `/users/account/${provider}/${providerAccountId}`)
     },
-    updateUser(user: Partial<AdapterUser> & Pick<AdapterUser, "id">): Awaitable<AdapterUser> {
+    updateUser(user) {
       console.log('updateUser', user)
-      return undefined
+      return client<AdapterUser>('PUT', `/users/${user.id}`, user)
     },
-    deleteUser(userId: string): Promise<void> | Awaitable<AdapterUser | null | undefined> {
+    deleteUser(userId: string) {
       console.log('deleteUser', userId)
-      return undefined
+      return client<AdapterUser | null | undefined>('DELETE', `/users/${userId}`)
     },
-    linkAccount(account: AdapterAccount): Promise<void> | Awaitable<AdapterAccount | null | undefined> {
+    linkAccount(account) {
       console.log('linkAccount', account)
-      return undefined
+      return client<AdapterAccount | null | undefined>('POST', '/accounts', account)
     },
-    unlinkAccount(providerAccountId: Pick<AdapterAccount, "provider" | "providerAccountId">): Promise<void> | Awaitable<AdapterAccount | undefined> {
-      console.log('unlinkAccount', providerAccountId)
-      return undefined
+    unlinkAccount({ provider, providerAccountId }) {
+      console.log('unlinkAccount', { provider, providerAccountId })
+      return client<AdapterAccount | undefined>('DELETE', `/accounts/${provider}/${providerAccountId}`)
     },
-    async createSession(session: { sessionToken: string; userId: string; expires: Date }) {
+    createSession(session) {
       console.log('createSession', session)
-      const res = await fetcher<AdapterSession>('POST', '/user', session)
-      return res
+      return client<AdapterSession>('POST', '/sessions', session)
     },
-    getSessionAndUser(sessionToken: string): Awaitable<{ session: AdapterSession; user: AdapterUser } | null> {
+    getSessionAndUser(sessionToken) {
       console.log('getSessionAndUser', sessionToken)
-      return undefined
+      return client<{ session: AdapterSession; user: AdapterUser } | null>('GET', `/sessions/${sessionToken}`)
     },
-    updateSession(session: Partial<AdapterSession> & Pick<AdapterSession, "sessionToken">): Awaitable<AdapterSession | null | undefined> {
-      console.log('updateSession', session)
-      return undefined
+    updateSession({ sessionToken, userId, expires }) {
+      console.log('updateSession', { sessionToken, userId, expires  })
+      return client<AdapterSession | null | undefined>('PUT', `/sessions/${sessionToken}`, { userId, expires })
     },
-    deleteSession(sessionToken: string): Promise<void> | Awaitable<AdapterSession | null | undefined> {
+    deleteSession(sessionToken) {
       console.log('deleteSession', sessionToken)
-      return undefined
+      return client<AdapterSession | null | undefined>('DELETE', `/sessions/${sessionToken}`)
     },
-    createVerificationToken(verificationToken: VerificationToken): Awaitable<VerificationToken | null | undefined> {
+    createVerificationToken(verificationToken) {
       console.log('createVerificationToken', verificationToken)
-      return undefined
+      return client<VerificationToken | null | undefined>('POST', '/verification-tokens', verificationToken)
     },
-    useVerificationToken(params: { identifier: string; token: string }): Awaitable<VerificationToken | null> {
+    useVerificationToken(params): Awaitable<VerificationToken | null> {
       console.log('useVerificationToken', params)
-      return undefined
+      return client<VerificationToken | null>('POST', '/verification-tokens/use', params)
     }
   }
 }
 
-const createFetcher = (baseUrl: string, apiSecret: string) => {
-  return async <T>(method: string, endpoint: string, body: any) => {
-    const url = `${baseUrl}/auth${endpoint}`
+const createFetchClient = (baseUrl: string, apiSecret: string) => {
+  return async function client<T>(method: 'POST' | 'GET' | 'PUT' | 'DELETE', path: string, body?: any) {
+    const url = `${baseUrl}/auth${path}`
     const headers = {
       'Content-Type': 'application/json',
-      'x-api-secret': apiSecret,
+      'X-Api-Secret': apiSecret,
     }
 
     const config: RequestInit = {
@@ -89,8 +86,11 @@ const createFetcher = (baseUrl: string, apiSecret: string) => {
     }
 
     const [err, res] = await resolveFetch(fetch(url, config))
-    if (err) throw new Error(`Response was not ok. Error: ${err}`)
+    if (err) throw new Error(`Failed to fetch the Auth API [${method}][${url}]. Error: ${err}`)
 
-    return res.json() as T
+    const [jErr, jRes] = await resolve<T>(res.json())
+    if (jErr) throw new Error(`Failed to parse JSON from the Auth API response [${method}][${url}]. Error: ${jErr}`)
+
+    return jRes
   }
 }
