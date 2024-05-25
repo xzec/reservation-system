@@ -2,12 +2,13 @@ FROM golang:1.22.2 as build
 
 WORKDIR /app
 
-COPY go.mod go.sum ./
+COPY go.mod go.sum /
 RUN go mod download
 
-COPY cmd/server/main.go ./
+COPY /cmd /cmd
+COPY /pkg/server /pkg/server
 
-RUN CGO_ENABLED=0 GOOS=linux go build -o /server .
+RUN CGO_ENABLED=0 GOOS=linux go build -C /cmd/server -o /server .
 
 EXPOSE 8080
 

@@ -3,10 +3,9 @@ services:
     container_name: backend
     image: backend:1.0.0
     env_file:
-      - path: backend.env
+      - path: backend/.env
     build:
       context: ./backend
-      dockerfile: server.dockerfile
     develop:
       watch:
         - action: rebuild
