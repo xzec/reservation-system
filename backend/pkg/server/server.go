@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"context"
@@ -19,7 +19,7 @@ type User struct {
 	UpdatedAt     time.Time `json:"updatedAt"`
 }
 
-func main() {
+func Start() {
 	dbPool, err := pgxpool.New(context.Background(), os.Getenv("DATABASE_URL"))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
