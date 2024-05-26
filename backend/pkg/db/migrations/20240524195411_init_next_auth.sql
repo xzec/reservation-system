@@ -41,9 +41,9 @@ create table accounts
 
 create table verification_tokens
 (
-    identifier text                                not null,
-    expires    timestamptz                         not null,
-    token      text                                not null,
+    identifier text        not null,
+    expires    timestamptz not null,
+    token      text        not null,
 
     primary key (identifier, token)
 );
@@ -51,7 +51,7 @@ create table verification_tokens
 create or replace function set_updated_at_now() returns trigger as
 $$
 begin
-    if row(new.*) is distinct from row(old.*) then
+    if row (new.*) is distinct from row (old.*) then
         new.updated_at = current_timestamp;
     end if;
     return new;
@@ -62,21 +62,21 @@ create trigger users_set_updated_at_now
     before update
     on users
     for each row
-    when (row(new.*) is distinct from row(old.*))
+    when (row (new.*) is distinct from row (old.*))
 execute procedure set_updated_at_now();
 
 create trigger sessions_set_updated_at_now
     before update
     on sessions
     for each row
-    when (row(new.*) is distinct from row(old.*))
+    when (row (new.*) is distinct from row (old.*))
 execute function set_updated_at_now();
 
 create trigger accounts_set_updated_at_now
     before update
     on accounts
     for each row
-    when (row(new.*) is distinct from row(old.*))
+    when (row (new.*) is distinct from row (old.*))
 execute function set_updated_at_now();
 -- +goose StatementEnd
 
