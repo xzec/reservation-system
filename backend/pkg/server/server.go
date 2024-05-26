@@ -27,7 +27,7 @@ func Start() {
 	}
 	defer dbPool.Close()
 
-	fmt.Println("Starting server at 8080...")
+	fmt.Println("Starting server...")
 	router := http.NewServeMux()
 
 	router.HandleFunc("GET /users", func(w http.ResponseWriter, r *http.Request) {
@@ -140,5 +140,6 @@ func Start() {
 		}
 	})
 
-	log.Fatal(http.ListenAndServe(":8080", router))
+	fmt.Println("Serving and listening at port " + os.Getenv("PORT"))
+	log.Fatal(http.ListenAndServe(":"+os.Getenv("PORT"), router))
 }
