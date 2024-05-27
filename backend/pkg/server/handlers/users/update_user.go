@@ -14,29 +14,11 @@ import (
 	"time"
 )
 
-type Optional[T any] struct {
-	Defined bool
-	Value   *T
-}
-
-func (o *Optional[T]) UnmarshalJSON(data []byte) error {
-	o.Defined = true
-	return json.Unmarshal(data, &o.Value)
-}
-
-func (o Optional[T]) String() string {
-	if o.Defined == true {
-		return fmt.Sprintf("{true %v}", o.Value)
-	} else {
-		return fmt.Sprintf("{false %v (undefined)}", o.Value)
-	}
-}
-
 type updateUserRequest struct {
-	Email         Optional[string]    `json:"email"`
-	EmailVerified Optional[time.Time] `json:"emailVerified,omitempty"`
-	Name          Optional[string]    `json:"name,omitempty"`
-	Image         Optional[string]    `json:"image,omitempty"`
+	Email         utils.Optional[string]    `json:"email"`
+	EmailVerified utils.Optional[time.Time] `json:"emailVerified,omitempty"`
+	Name          utils.Optional[string]    `json:"name,omitempty"`
+	Image         utils.Optional[string]    `json:"image,omitempty"`
 }
 
 func UpdateUserHandler(pool *pgxpool.Pool) http.HandlerFunc {
