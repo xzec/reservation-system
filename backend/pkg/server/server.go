@@ -7,7 +7,8 @@ import (
 	"log"
 	"net/http"
 	"os"
-	handlers "rs/pkg/server/handlers/users"
+	accounts "rs/pkg/server/handlers/accounts"
+	users "rs/pkg/server/handlers/users"
 	"time"
 )
 
@@ -30,15 +31,17 @@ func Start() {
 	fmt.Println("Starting server...")
 	router := http.NewServeMux()
 
-	router.HandleFunc("POST /auth/users", handlers.CreateUserHandler(pool))
+	router.HandleFunc("POST /auth/users", users.CreateUserHandler(pool))
 
-	router.HandleFunc("GET /auth/users/{id}", handlers.GetUserHandler(pool))
+	router.HandleFunc("GET /auth/users/{id}", users.GetUserHandler(pool))
 
-	router.HandleFunc("GET /auth/users/email/{email}", handlers.GetUserByEmailHandler(pool))
+	router.HandleFunc("GET /auth/users/email/{email}", users.GetUserByEmailHandler(pool))
 
-	router.HandleFunc("PATCH /auth/users/{id}", handlers.UpdateUserHandler(pool))
+	router.HandleFunc("PATCH /auth/users/{id}", users.UpdateUserHandler(pool))
 
-	router.HandleFunc("DELETE /auth/users/{id}", handlers.DeleteUserHandler(pool))
+	router.HandleFunc("DELETE /auth/users/{id}", users.DeleteUserHandler(pool))
+
+	router.HandleFunc("POST /auth/accounts", accounts.LinkAccountHandler(pool))
 
 	fmt.Println("Serving and listening at port " + os.Getenv("PORT"))
 	log.Fatal(http.ListenAndServe(":"+os.Getenv("PORT"), router))
