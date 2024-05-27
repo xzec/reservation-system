@@ -43,6 +43,8 @@ func Start() {
 
 	router.HandleFunc("POST /auth/accounts", accounts.LinkAccountHandler(pool))
 
+	router.HandleFunc("DELETE /auth/accounts/{provider}/{providerAccountId}", accounts.UnlinkAccountHandler(pool))
+
 	fmt.Println("Serving and listening at port " + os.Getenv("PORT"))
 	log.Fatal(http.ListenAndServe(":"+os.Getenv("PORT"), router))
 }
