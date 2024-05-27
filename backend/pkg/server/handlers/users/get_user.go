@@ -11,7 +11,7 @@ import (
 	"rs/pkg/server/utils"
 )
 
-func GetUserHandler(pool *pgxpool.Pool) (handler func(http.ResponseWriter, *http.Request)) {
+func GetUserHandler(pool *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userId := r.PathValue("id")
 		if !utils.IsValidUUID(userId) {

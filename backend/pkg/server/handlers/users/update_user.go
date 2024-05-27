@@ -39,7 +39,7 @@ type updateUserRequest struct {
 	Image         Optional[string]    `json:"image,omitempty"`
 }
 
-func UpdateUserHandler(pool *pgxpool.Pool) (handler func(http.ResponseWriter, *http.Request)) {
+func UpdateUserHandler(pool *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userId := r.PathValue("id")
 		if !utils.IsValidUUID(userId) {

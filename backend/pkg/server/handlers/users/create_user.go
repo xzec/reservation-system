@@ -17,7 +17,7 @@ type createUserRequest struct {
 	Image         *string `json:"image,omitempty"`
 }
 
-func CreateUserHandler(pool *pgxpool.Pool) (handler func(http.ResponseWriter, *http.Request)) {
+func CreateUserHandler(pool *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var body createUserRequest
 

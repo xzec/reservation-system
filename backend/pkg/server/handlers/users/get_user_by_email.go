@@ -10,7 +10,7 @@ import (
 	"rs/pkg/server/models"
 )
 
-func GetUserByEmailHandler(pool *pgxpool.Pool) (handler func(http.ResponseWriter, *http.Request)) {
+func GetUserByEmailHandler(pool *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var user models.User
 

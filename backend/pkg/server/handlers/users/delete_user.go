@@ -8,7 +8,7 @@ import (
 	"rs/pkg/server/utils"
 )
 
-func DeleteUserHandler(pool *pgxpool.Pool) (handler func(http.ResponseWriter, *http.Request)) {
+func DeleteUserHandler(pool *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userId := r.PathValue("id")
 		if !utils.IsValidUUID(userId) {
