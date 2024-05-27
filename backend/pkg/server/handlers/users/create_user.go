@@ -12,9 +12,9 @@ import (
 
 type createUserRequest struct {
 	Email         *string `json:"email"`
-	EmailVerified *string `json:"emailVerified,omitempty"`
-	Name          *string `json:"name,omitempty"`
-	Image         *string `json:"image,omitempty"`
+	EmailVerified *string `json:"emailVerified"`
+	Name          *string `json:"name"`
+	Image         *string `json:"image"`
 }
 
 func CreateUserHandler(pool *pgxpool.Pool) http.HandlerFunc {
@@ -37,7 +37,12 @@ insert into users(email, email_verified, name, image)
 values($1, $2, $3, $4)
 returning  id, email, email_verified, name, image`
 
-		if err = pool.QueryRow(context.Background(), sql, body.Email, body.EmailVerified, body.Name, body.Image).Scan(&newUser.Id, &newUser.Email, &newUser.EmailVerified, &newUser.Name, &newUser.Image); err != nil {
+		err = pool.QueryRow(context.Background(), sql,
+			body.Email, body.EmailVerified, body.Name, body.Image,
+		).Scan(
+			&newUser.Id, &newUser.Email, &newUser.EmailVerified, &newUser.Name, &newUser.Image,
+		)
+		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
