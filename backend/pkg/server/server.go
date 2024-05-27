@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	accounts "rs/pkg/server/handlers/accounts"
+	sessions "rs/pkg/server/handlers/sessions"
 	users "rs/pkg/server/handlers/users"
 	"time"
 )
@@ -44,6 +45,8 @@ func Start() {
 	router.HandleFunc("POST /auth/accounts", accounts.LinkAccountHandler(pool))
 
 	router.HandleFunc("DELETE /auth/accounts/{provider}/{providerAccountId}", accounts.UnlinkAccountHandler(pool))
+
+	router.HandleFunc("POST /auth/sessions", sessions.CreateSessionHandler(pool))
 
 	fmt.Println("Serving and listening at port " + os.Getenv("PORT"))
 	log.Fatal(http.ListenAndServe(":"+os.Getenv("PORT"), router))
