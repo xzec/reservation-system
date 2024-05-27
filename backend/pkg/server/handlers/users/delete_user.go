@@ -20,7 +20,7 @@ func DeleteUserHandler(pool *pgxpool.Pool) http.HandlerFunc {
 
 		commandTag, err := pool.Exec(context.Background(), sql, userId)
 		if err != nil {
-			http.Error(w, "Failed to delete user.", http.StatusInternalServerError)
+			http.Error(w, "Failed to delete the user.", http.StatusInternalServerError)
 			return
 		}
 
@@ -30,6 +30,6 @@ func DeleteUserHandler(pool *pgxpool.Pool) http.HandlerFunc {
 		}
 
 		nilResponse, _ := json.Marshal(nil)
-		_, err = w.Write(nilResponse)
+		w.Write(nilResponse)
 	}
 }
