@@ -48,6 +48,8 @@ func Start() {
 
 	router.HandleFunc("POST /auth/sessions", sessions.CreateSessionHandler(pool))
 
+	router.HandleFunc("GET /auth/sessions/{sessionToken}", sessions.GetSessionAndUserHandler(pool))
+
 	fmt.Println("Serving and listening at port " + os.Getenv("PORT"))
 	log.Fatal(http.ListenAndServe(":"+os.Getenv("PORT"), router))
 }
