@@ -82,12 +82,15 @@ func UpdateUserHandler(pool *pgxpool.Pool) http.HandlerFunc {
 		var updatedUser models.User
 		sql2 := `
 update users
-set email=$2,
+set
+    email=$2,
     email_verified=$3,
     name=$4,
     image=$5
-where id=$1
-returning id, email, email_verified, name, image`
+where
+    id=$1
+returning
+    id, email, email_verified, name, image`
 
 		if err = transaction.QueryRow(ctx, sql2, userId, toUpdate.Email, toUpdate.EmailVerified, toUpdate.Name, toUpdate.Image).Scan(&updatedUser.Id, &updatedUser.Email, &updatedUser.EmailVerified, &updatedUser.Name, &updatedUser.Image); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)

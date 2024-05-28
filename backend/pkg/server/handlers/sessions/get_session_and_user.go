@@ -38,8 +38,8 @@ join
 where
     s.session_token = $1`
 
-		err := pool.QueryRow(context.Background(), sql1,
-			r.PathValue("sessionToken"),
+		err := pool.QueryRow(
+			context.Background(), sql1, r.PathValue("sessionToken"),
 		).Scan(
 			&result.Session.Id, &result.Session.UserId, &result.Session.Expires, &result.Session.SessionToken, &result.User.Id, &result.User.Email, &result.User.EmailVerified, &result.User.Name, &result.User.Image,
 		)
