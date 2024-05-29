@@ -19,8 +19,7 @@ func GetUserByEmailHandler(pool *pgxpool.Pool) http.HandlerFunc {
 		err := pool.QueryRow(context.Background(), sql, r.PathValue("email")).Scan(&user.Id, &user.Email, &user.EmailVerified, &user.Name, &user.Image)
 		if errors.Is(err, pgx.ErrNoRows) {
 			w.WriteHeader(http.StatusNotFound)
-			nilResponse, _ := json.Marshal(nil)
-			_, err = w.Write(nilResponse)
+			_, err = w.Write([]byte("null"))
 			return
 		}
 		if err != nil {

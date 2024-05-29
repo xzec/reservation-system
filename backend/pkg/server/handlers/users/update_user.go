@@ -56,8 +56,7 @@ func UpdateUserHandler(pool *pgxpool.Pool) http.HandlerFunc {
 		err = transaction.QueryRow(ctx, sql1, userId).Scan(&oldUser.Email, &oldUser.EmailVerified, &oldUser.Name, &oldUser.Image)
 		if errors.Is(err, pgx.ErrNoRows) {
 			w.WriteHeader(http.StatusNotFound)
-			nilResponse, _ := json.Marshal(nil)
-			_, err = w.Write(nilResponse)
+			_, err = w.Write([]byte("null"))
 			return
 		}
 		if err != nil {

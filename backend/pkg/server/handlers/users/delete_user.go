@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"encoding/json"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"net/http"
 	"rs/pkg/server/utils"
@@ -29,7 +28,6 @@ func DeleteUserHandler(pool *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 
-		nilResponse, _ := json.Marshal(nil)
-		w.Write(nilResponse)
+		w.Write([]byte("null"))
 	}
 }

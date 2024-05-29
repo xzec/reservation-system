@@ -45,8 +45,7 @@ where
 		)
 		if errors.Is(err, pgx.ErrNoRows) {
 			w.WriteHeader(http.StatusNotFound)
-			nilResponse, _ := json.Marshal(nil)
-			_, err = w.Write(nilResponse)
+			_, err = w.Write([]byte("null"))
 			return
 		}
 		if err != nil {
