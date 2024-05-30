@@ -57,6 +57,8 @@ func Start() {
 
 	router.HandleFunc("POST /auth/verification-tokens", verificationTokens.CreateVerificationTokenHandler(pool))
 
+	router.HandleFunc("POST /auth/verification-tokens/use", verificationTokens.UseVerificationTokenHandler(pool))
+
 	fmt.Println("Serving and listening at port " + os.Getenv("PORT"))
 	log.Fatal(http.ListenAndServe(":"+os.Getenv("PORT"), router))
 }
