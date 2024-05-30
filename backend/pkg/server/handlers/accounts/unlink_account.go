@@ -24,6 +24,6 @@ func UnlinkAccountHandler(pool *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 
-		_, _ = w.Write([]byte("null"))
+		w.Write([]byte("null"))
 	}
 }

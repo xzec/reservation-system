@@ -52,6 +52,8 @@ func Start() {
 
 	router.HandleFunc("PATCH /auth/sessions/{sessionToken}", sessions.UpdateSessionHandler(pool))
 
+	router.HandleFunc("DELETE /auth/sessions/{sessionToken}", sessions.DeleteSessionHandler(pool))
+
 	fmt.Println("Serving and listening at port " + os.Getenv("PORT"))
 	log.Fatal(http.ListenAndServe(":"+os.Getenv("PORT"), router))
 }
