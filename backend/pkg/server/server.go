@@ -10,6 +10,7 @@ import (
 	accounts "rs/pkg/server/handlers/accounts"
 	sessions "rs/pkg/server/handlers/sessions"
 	users "rs/pkg/server/handlers/users"
+	verificationTokens "rs/pkg/server/handlers/verification_tokens"
 	"time"
 )
 
@@ -53,6 +54,8 @@ func Start() {
 	router.HandleFunc("PATCH /auth/sessions/{sessionToken}", sessions.UpdateSessionHandler(pool))
 
 	router.HandleFunc("DELETE /auth/sessions/{sessionToken}", sessions.DeleteSessionHandler(pool))
+
+	router.HandleFunc("POST /auth/verification-tokens", verificationTokens.CreateVerificationTokenHandler(pool))
 
 	fmt.Println("Serving and listening at port " + os.Getenv("PORT"))
 	log.Fatal(http.ListenAndServe(":"+os.Getenv("PORT"), router))
