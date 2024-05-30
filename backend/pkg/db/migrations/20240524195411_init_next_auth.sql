@@ -85,7 +85,6 @@ execute function set_updated_at_now();
 drop trigger if exists users_set_updated_at_now on users;
 drop trigger if exists sessions_set_updated_at_now on sessions;
 drop trigger if exists accounts_set_updated_at_now on accounts;
-drop trigger if exists verification_tokens_set_updated_at_now on verification_tokens;
 
 drop function if exists set_updated_at_now();
 
