@@ -20,23 +20,18 @@ func GetSessionAndUserHandler(pool *pgxpool.Pool) http.HandlerFunc {
 			User:    models.User{},
 		}
 
-		sql1 := `
-select
-    s.id as session_id,
-    s.user_id,
-    s.expires,
-    s.session_token,
-    u.id as user_id,
-    u.email,
-    u.email_verified,
-    u.name,
-    u.image
-from
-    sessions s
-join
-    users u on s.user_id = u.id
-where
-    s.session_token = $1`
+		sql1 := `select s.id as session_id,
+       s.user_id,
+       s.expires,
+       s.session_token,
+       u.id as user_id,
+       u.email,
+       u.email_verified,
+       u.name,
+       u.image
+from sessions s
+         join users u on s.user_id = u.id
+where s.session_token = $1`
 
 		err := pool.QueryRow(
 			context.Background(), sql1, r.PathValue("sessionToken"),

@@ -32,10 +32,9 @@ func CreateUserHandler(pool *pgxpool.Pool) http.HandlerFunc {
 		}
 
 		var newUser models.User
-		sql := `
-insert into users(email, email_verified, name, image)
-values($1, $2, $3, $4)
-returning  id, email, email_verified, name, image`
+		sql := `insert into users(email, email_verified, name, image)
+values ($1, $2, $3, $4)
+returning id, email, email_verified, name, image`
 
 		err = pool.QueryRow(context.Background(), sql,
 			body.Email, body.EmailVerified, body.Name, body.Image,
