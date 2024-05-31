@@ -54,8 +54,7 @@ where s.session_token = $1`
 			return
 		}
 
-		_, err = w.Write(res)
-		if err != nil {
+		if _, err = w.Write(res); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	}

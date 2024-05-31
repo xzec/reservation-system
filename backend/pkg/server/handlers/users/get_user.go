@@ -19,10 +19,9 @@ func GetUserHandler(pool *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 
-		var user models.User
-
 		sql := "select id, email, email_verified, name, image from users where id=$1"
 
+		var user models.User
 		err := pool.QueryRow(context.Background(), sql, userId).Scan(&user.Id, &user.Email, &user.EmailVerified, &user.Name, &user.Image)
 		if errors.Is(err, pgx.ErrNoRows) {
 			w.WriteHeader(http.StatusNotFound)
@@ -40,8 +39,7 @@ func GetUserHandler(pool *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 
-		_, err = w.Write(res)
-		if err != nil {
+		if _, err = w.Write(res); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	}
