@@ -39,6 +39,8 @@ func Start() {
 
 	router.HandleFunc("GET /auth/users/email/{email}", users.GetUserByEmailHandler(pool))
 
+	router.HandleFunc("GET /auth/users/account/{provider}/{providerAccountId}", users.GetUserByAccountHandler(pool))
+
 	router.HandleFunc("PATCH /auth/users/{id}", users.UpdateUserHandler(pool))
 
 	router.HandleFunc("DELETE /auth/users/{id}", users.DeleteUserHandler(pool))
