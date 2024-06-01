@@ -1,7 +1,16 @@
 package main
 
-import "rs/pkg/server"
+import (
+	"context"
+	"fmt"
+	"os"
+	"rs/pkg/server"
+)
 
 func main() {
-	server.Start()
+	ctx := context.Background()
+	if err := server.Run(ctx, os.Stdout); err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err)
+		os.Exit(1)
+	}
 }
