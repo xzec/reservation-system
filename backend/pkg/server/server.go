@@ -3,6 +3,7 @@ package server
 import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"net/http"
+	"rs/pkg/server/middleware"
 )
 
 func NewServer(pool *pgxpool.Pool) http.Handler {
@@ -10,5 +11,8 @@ func NewServer(pool *pgxpool.Pool) http.Handler {
 
 	addRoutes(mux, pool)
 
-	return mux
+	var handler http.Handler = mux
+	handler = middleware.LoggingMiddleware(handler)
+	handler = middleware.CheckAuthHeaders(handler)
+	return handler
 }
