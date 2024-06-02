@@ -31,7 +31,7 @@ func (h ContextHandler) Handle(ctx context.Context, r slog.Record) error {
 }
 
 func createLogger(w io.Writer) *slog.Logger {
-	jsonHandler := slog.NewTextHandler(w, nil)
+	jsonHandler := slog.NewJSONHandler(w, nil)
 	ctxHandler := ContextHandler{jsonHandler}
 
 	logger := slog.New(ctxHandler)
