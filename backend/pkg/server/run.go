@@ -18,7 +18,7 @@ func Run(ctx context.Context, w io.Writer) error {
 	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt)
 	defer cancel()
 
-	logger := slog.New(slog.NewTextHandler(w, nil))
+	logger := createLogger(w)
 	slog.SetDefault(logger)
 
 	pool, err := pgxpool.New(context.Background(), os.Getenv("DATABASE_URL"))
@@ -48,11 +48,12 @@ func Run(ctx context.Context, w io.Writer) error {
 	go func() {
 		defer wg.Done()
 		<-ctx.Done()
+		slog.Info(fmt.Sprintf("shutdown initiated, reason: %v", ctx.Err()))
 		shutdownCtx := context.Background()
 		shutdownCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
 		defer cancel()
 		slog.Info("gracefully shutting down the http server ...")
-		if err := httpServer.Shutdown(shutdownCtx); err != nil {
+		if err = httpServer.Shutdown(shutdownCtx); err != nil {
 			fmt.Fprintf(os.Stderr, "error shutting down the http server: %s\n", err)
 		}
 	}()
