@@ -14,7 +14,7 @@ func GetUserHandler(pool *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userId := r.PathValue("id")
 		if !utils.IsValidUUID(userId) {
-			http.Error(w, "Invalid user id.", http.StatusBadRequest)
+			http.Error(w, "invalid user id", http.StatusBadRequest)
 			return
 		}
 
