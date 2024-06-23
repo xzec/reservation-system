@@ -30,7 +30,8 @@ export default function CustomRestAdapter({ baseUrl, apiSecret }: Options): Adap
     },
     updateUser(user) {
       console.log('updateUser', user)
-      return client<AdapterUser>('PUT', `/users/${user.id}`, user)
+      const { id, ...fields } = user
+      return client<AdapterUser>('PUT', `/users/${id}`, fields)
     },
     deleteUser(userId: string) {
       console.log('deleteUser', userId)
