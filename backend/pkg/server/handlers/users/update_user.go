@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/jackc/pgx/v5"
@@ -25,27 +24,26 @@ func UpdateUserHandler(pool *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userId := r.PathValue("id")
 		if !utils.IsValidUUID(userId) {
-			http.Error(w, "Invalid user id.", http.StatusBadRequest)
+			utils.HttpFormattedError(w, r, http.StatusBadRequest, "invalid user id", "invalid \"userId\"")
 			return
 		}
 
-		var body updateUserRequest
-
-		err := json.NewDecoder(r.Body).Decode(&body)
+		body, err := utils.Decode[updateUserRequest](r)
 		if err != nil {
-			http.Error(w, "Failed to parse the request body: "+err.Error(), http.StatusBadRequest)
+			utils.HttpFormattedError(w, r, http.StatusBadRequest, err.Error(), "failed to parse the request body")
 			return
 		}
 
 		if err = validateUpdateUserRequest(body); err != nil {
-			http.Error(w, "Invalid request body: "+err.Error(), http.StatusBadRequest)
+			utils.HttpFormattedError(w, r, http.StatusBadRequest, err.Error(), "invalid request body")
 			return
 		}
 
 		ctx := context.Background()
 		transaction, err := pool.Begin(ctx)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			utils.HttpInternalServerError(w, r, err.Error())
+			return
 		}
 
 		defer transaction.Rollback(ctx)
@@ -55,12 +53,11 @@ func UpdateUserHandler(pool *pgxpool.Pool) http.HandlerFunc {
 		var oldUser models.User
 		err = transaction.QueryRow(ctx, sql1, userId).Scan(&oldUser.Email, &oldUser.EmailVerified, &oldUser.Name, &oldUser.Image)
 		if errors.Is(err, pgx.ErrNoRows) {
-			w.WriteHeader(http.StatusNotFound)
-			_, err = w.Write([]byte("null"))
+			utils.HttpFormattedError(w, r, http.StatusNotFound, err.Error(), nil)
 			return
 		}
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			utils.HttpInternalServerError(w, r, err.Error())
 			return
 		}
 
@@ -79,36 +76,27 @@ func UpdateUserHandler(pool *pgxpool.Pool) http.HandlerFunc {
 		}
 
 		var updatedUser models.User
-		sql2 := `
-update users
-set
-    email=$2,
+		sql2 := `update users
+set email=$2,
     email_verified=$3,
     name=$4,
     image=$5
-where
-    id=$1
+where id = $1
 returning
     id, email, email_verified, name, image`
 
 		if err = transaction.QueryRow(ctx, sql2, userId, toUpdate.Email, toUpdate.EmailVerified, toUpdate.Name, toUpdate.Image).Scan(&updatedUser.Id, &updatedUser.Email, &updatedUser.EmailVerified, &updatedUser.Name, &updatedUser.Image); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			utils.HttpInternalServerError(w, r, err.Error())
 			return
 		}
 
 		if err = transaction.Commit(ctx); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			utils.HttpInternalServerError(w, r, err.Error())
 			return
 		}
 
-		res, err := json.Marshal(updatedUser)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		if _, err = w.Write(res); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+		if err = utils.Encode(w, http.StatusOK, updatedUser); err != nil {
+			utils.HttpInternalServerError(w, r, err.Error())
 			return
 		}
 	}
