@@ -2,12 +2,12 @@ package handlers
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"net/http"
 	"net/mail"
 	"rs/pkg/server/models"
+	"rs/pkg/server/utils"
 )
 
 type createUserRequest struct {
@@ -19,16 +19,15 @@ type createUserRequest struct {
 
 func CreateUserHandler(pool *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var body createUserRequest
-
-		err := json.NewDecoder(r.Body).Decode(&body)
+		body, err := utils.Decode[createUserRequest](r)
 		if err != nil {
-			http.Error(w, "Failed to parse the request body:"+err.Error(), http.StatusBadRequest)
+			utils.HttpFormattedError(w, r, http.StatusBadRequest, err.Error(), "failed to parse the request body")
 			return
 		}
 
 		if err = validateCreateUserRequest(body); err != nil {
-			http.Error(w, "Invalid request body: "+err.Error(), http.StatusBadRequest)
+			utils.HttpFormattedError(w, r, http.StatusBadRequest, err.Error(), "invalid request body")
+			return
 		}
 
 		var newUser models.User
@@ -42,18 +41,13 @@ returning id, email, email_verified, name, image`
 			&newUser.Id, &newUser.Email, &newUser.EmailVerified, &newUser.Name, &newUser.Image,
 		)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			utils.HttpInternalServerError(w, r, err.Error())
 			return
 		}
 
-		res, err := json.Marshal(newUser)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+		if err = utils.Encode(w, http.StatusOK, newUser); err != nil {
+			utils.HttpInternalServerError(w, r, err.Error())
 			return
-		}
-
-		if _, err = w.Write(res); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	}
 }

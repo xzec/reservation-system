@@ -11,7 +11,7 @@ func DeleteUserHandler(pool *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userId := r.PathValue("id")
 		if !utils.IsValidUUID(userId) {
-			http.Error(w, "Invalid user id.", http.StatusBadRequest)
+			utils.HttpFormattedError(w, r, http.StatusBadRequest, "invalid user id", "invalid \"userId\"")
 			return
 		}
 
@@ -19,12 +19,12 @@ func DeleteUserHandler(pool *pgxpool.Pool) http.HandlerFunc {
 
 		commandTag, err := pool.Exec(context.Background(), sql, userId)
 		if err != nil {
-			http.Error(w, "Failed to delete the user.", http.StatusInternalServerError)
+			utils.HttpFormattedError(w, r, http.StatusInternalServerError, "failed to delete the user", nil)
 			return
 		}
 
 		if commandTag.RowsAffected() == 0 {
-			http.Error(w, "User not found.", http.StatusNotFound)
+			utils.HttpFormattedError(w, r, http.StatusNotFound, "user not found", nil)
 			return
 		}
 
