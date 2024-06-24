@@ -11,7 +11,7 @@ func HttpInternalServerError(w http.ResponseWriter, r *http.Request, internalErr
 	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 }
 
-func HttpFormattedError(w http.ResponseWriter, r *http.Request, status int, error string, response any) {
+func HttpFormattedError(w http.ResponseWriter, r *http.Request, status int, internalError string, response any) {
 	var logLevel slog.Level
 	switch {
 	case status >= 500:
@@ -22,7 +22,7 @@ func HttpFormattedError(w http.ResponseWriter, r *http.Request, status int, erro
 		logLevel = slog.LevelInfo
 	}
 
-	logHttpError(r, logLevel, status, error)
+	logHttpError(r, logLevel, status, internalError)
 
 	if err := Encode(w, status, response); err != nil {
 		HttpInternalServerError(w, r, err.Error())
