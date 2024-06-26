@@ -2,6 +2,7 @@
 <project version="4">
   <component name="SqlDialectMappings">
     <file url="file://$PROJECT_DIR$/backend/pkg/db/migrations" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/backend/pkg/db/migrations/20240524195411_init_next_auth.sql" dialect="PostgreSQL" />
     <file url="PROJECT" dialect="PostgreSQL" />
   </component>
 </project>
