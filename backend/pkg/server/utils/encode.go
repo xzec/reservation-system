@@ -14,3 +14,7 @@ func Encode[T any](w http.ResponseWriter, status int, v T) error {
 	}
 	return nil
 }
+
+func EncodeNullStatusOK(w http.ResponseWriter) error {
+	return Encode[any](w, http.StatusOK, nil)
+}

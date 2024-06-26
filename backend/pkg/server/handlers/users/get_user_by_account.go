@@ -32,7 +32,11 @@ where a.provider = $1
 			&user.Id, &user.Email, &user.EmailVerified, &user.Name, &user.Image,
 		)
 		if errors.Is(err, pgx.ErrNoRows) {
-			utils.HttpFormattedError(w, r, http.StatusNotFound, err.Error(), nil)
+			utils.HttpFormattedError(w, r, http.StatusOK, err.Error(), nil)
+			if err = utils.EncodeNullStatusOK(w); err != nil {
+				utils.HttpInternalServerError(w, r, err.Error())
+				return
+			}
 			return
 		}
 		if err != nil {

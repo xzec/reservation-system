@@ -28,12 +28,12 @@ func LoggingMiddleware(handler http.Handler) http.Handler {
 
 		traceId := r.Header.Get("X-Trace-Id")
 		if traceId == "" {
-			newTraceId, err := uuid.NewRandom()
+			newUuid, err := uuid.NewRandom()
 			if err != nil {
 				utils.HttpInternalServerError(w, r, "failed to generate a traceId for the request")
 				return
 			}
-			traceId = newTraceId.String()
+			traceId = newUuid.String()
 		}
 
 		ctx := context.WithValue(r.Context(), "traceId", traceId)
