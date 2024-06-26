@@ -1,7 +1,6 @@
 import type { Adapter, AdapterAccount, AdapterSession, AdapterUser, VerificationToken } from "next-auth/adapters"
 import { Awaitable } from "next-auth"
-import resolveFetch from "~/utils/resolveFetch"
-import { resolve } from "~/utils/resolve"
+import { createFetchClient } from "~/auth/fetch-client"
 
 type Options = {
   baseUrl: string
@@ -72,26 +71,3 @@ export default function CustomRestAdapter({ baseUrl, apiSecret }: Options): Adap
   }
 }
 
-const createFetchClient = (baseUrl: string, apiSecret: string) => {
-  return async function client<T>(method: 'POST' | 'GET' | 'PUT' | 'DELETE', path: string, body?: any) {
-    const url = `${baseUrl}/auth${path}`
-    const headers = {
-      'Content-Type': 'application/json',
-      'X-Api-Secret': apiSecret,
-    }
-
-    const config: RequestInit = {
-      method,
-      headers,
-      body: body ? JSON.stringify(body) : null
-    }
-
-    const [err, res] = await resolveFetch(fetch(url, config))
-    if (err) throw new Error(`Failed to fetch the Auth API [${method}][${url}]. Error: ${err}`)
-
-    const [jErr, jRes] = await resolve<T>(res.json())
-    if (jErr) throw new Error(`Failed to parse JSON from the Auth API response [${method}][${url}]. Error: ${jErr}`)
-
-    return jRes
-  }
-}
