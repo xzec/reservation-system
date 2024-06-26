@@ -28,9 +28,7 @@ where a.provider = $1
   and a.provider_account_id = $2`
 
 		var user models.User
-		err := pool.QueryRow(
-			context.Background(), sql, provider, providerAccountId,
-		).Scan(
+		err := pool.QueryRow(context.Background(), sql, provider, providerAccountId).Scan(
 			&user.Id, &user.Email, &user.EmailVerified, &user.Name, &user.Image,
 		)
 		if errors.Is(err, pgx.ErrNoRows) {

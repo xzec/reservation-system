@@ -27,7 +27,5 @@ func DeleteUserHandler(pool *pgxpool.Pool) http.HandlerFunc {
 			utils.HttpFormattedError(w, r, http.StatusNotFound, "user not found", nil)
 			return
 		}
-
-		w.Write([]byte("null"))
 	}
 }

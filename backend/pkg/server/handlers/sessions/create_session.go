@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"net/http"
@@ -18,22 +17,19 @@ type createSessionRequest struct {
 
 func CreateSessionHandler(pool *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var body createSessionRequest
-
-		err := json.NewDecoder(r.Body).Decode(&body)
+		body, err := utils.Decode[createSessionRequest](r)
 		if err != nil {
-			http.Error(w, "Failed to parse the request body:"+err.Error(), http.StatusBadRequest)
+			utils.HttpFormattedError(w, r, http.StatusBadRequest, err.Error(), "failed to parse the request body")
 			return
 		}
 
 		if err = validateCreateSessionRequest(body); err != nil {
-			http.Error(w, "Invalid request body: "+err.Error(), http.StatusBadRequest)
+			utils.HttpFormattedError(w, r, http.StatusBadRequest, err.Error(), "invalid request body")
 			return
 		}
 
 		var session models.Session
-		sql := `
-insert into sessions(user_id, expires, session_token)
+		sql := `insert into sessions(user_id, expires, session_token)
 values ($1, $2, $3)
 returning id, user_id, expires, session_token`
 
@@ -43,18 +39,13 @@ returning id, user_id, expires, session_token`
 			&session.Id, &session.UserId, &session.Expires, &session.SessionToken,
 		)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			utils.HttpInternalServerError(w, r, err.Error())
 			return
 		}
 
-		res, err := json.Marshal(session)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+		if err = utils.Encode(w, http.StatusOK, session); err != nil {
+			utils.HttpInternalServerError(w, r, err.Error())
 			return
-		}
-
-		if _, err = w.Write(res); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	}
 }

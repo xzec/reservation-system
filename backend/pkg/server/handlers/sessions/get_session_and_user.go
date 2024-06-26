@@ -2,17 +2,19 @@ package handlers
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"net/http"
 	"rs/pkg/server/models"
+	"rs/pkg/server/utils"
 )
 
 func GetSessionAndUserHandler(pool *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		result := struct {
+		sessionToken := r.PathValue("sessionToken")
+
+		sessionAndUser := struct {
 			Session models.Session `json:"session"`
 			User    models.User    `json:"user"`
 		}{
@@ -20,7 +22,7 @@ func GetSessionAndUserHandler(pool *pgxpool.Pool) http.HandlerFunc {
 			User:    models.User{},
 		}
 
-		sql1 := `select s.id as session_id,
+		sql := `select s.id as session_id,
        s.user_id,
        s.expires,
        s.session_token,
@@ -33,29 +35,29 @@ from sessions s
          join users u on s.user_id = u.id
 where s.session_token = $1`
 
-		err := pool.QueryRow(
-			context.Background(), sql1, r.PathValue("sessionToken"),
-		).Scan(
-			&result.Session.Id, &result.Session.UserId, &result.Session.Expires, &result.Session.SessionToken, &result.User.Id, &result.User.Email, &result.User.EmailVerified, &result.User.Name, &result.User.Image,
+		err := pool.QueryRow(context.Background(), sql, sessionToken).Scan(
+			&sessionAndUser.Session.Id,
+			&sessionAndUser.Session.UserId,
+			&sessionAndUser.Session.Expires,
+			&sessionAndUser.Session.SessionToken,
+			&sessionAndUser.User.Id,
+			&sessionAndUser.User.Email,
+			&sessionAndUser.User.EmailVerified,
+			&sessionAndUser.User.Name,
+			&sessionAndUser.User.Image,
 		)
 		if errors.Is(err, pgx.ErrNoRows) {
-			w.WriteHeader(http.StatusNotFound)
-			_, err = w.Write([]byte("null"))
+			utils.HttpFormattedError(w, r, http.StatusNotFound, err.Error(), nil)
 			return
 		}
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			utils.HttpInternalServerError(w, r, err.Error())
 			return
 		}
 
-		res, err := json.Marshal(result)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+		if err = utils.Encode(w, http.StatusOK, sessionAndUser); err != nil {
+			utils.HttpInternalServerError(w, r, err.Error())
 			return
-		}
-
-		if _, err = w.Write(res); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	}
 }

@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -19,23 +18,24 @@ type updateSessionRequest struct {
 
 func UpdateSessionHandler(pool *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var body updateSessionRequest
+		sessionToken := r.PathValue("sessionToken")
 
-		err := json.NewDecoder(r.Body).Decode(&body)
+		body, err := utils.Decode[updateSessionRequest](r)
 		if err != nil {
-			http.Error(w, "Failed to parse the request body: "+err.Error(), http.StatusBadRequest)
+			utils.HttpFormattedError(w, r, http.StatusBadRequest, err.Error(), "failed to parse the request body")
 			return
 		}
 
 		if err = validateUpdateSessionRequest(body); err != nil {
-			http.Error(w, "Invalid request body: "+err.Error(), http.StatusBadRequest)
+			utils.HttpFormattedError(w, r, http.StatusBadRequest, err.Error(), "invalid request body")
 			return
 		}
 
 		ctx := context.Background()
 		transaction, err := pool.Begin(ctx)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			utils.HttpInternalServerError(w, r, err.Error())
+			return
 		}
 
 		defer transaction.Rollback(ctx)
@@ -43,18 +43,15 @@ func UpdateSessionHandler(pool *pgxpool.Pool) http.HandlerFunc {
 		sql1 := "select id, user_id, expires, session_token from sessions where session_token=$1"
 
 		var oldSession models.Session
-		err = transaction.QueryRow(
-			ctx, sql1, r.PathValue("sessionToken"),
-		).Scan(
+		err = transaction.QueryRow(ctx, sql1, sessionToken).Scan(
 			&oldSession.Id, &oldSession.UserId, &oldSession.Expires, &oldSession.SessionToken,
 		)
 		if errors.Is(err, pgx.ErrNoRows) {
-			w.WriteHeader(http.StatusNotFound)
-			_, err = w.Write([]byte("null"))
+			utils.HttpFormattedError(w, r, http.StatusNotFound, err.Error(), nil)
 			return
 		}
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			utils.HttpInternalServerError(w, r, err.Error())
 			return
 		}
 
@@ -67,38 +64,27 @@ func UpdateSessionHandler(pool *pgxpool.Pool) http.HandlerFunc {
 		}
 
 		var updatedSession models.Session
-		sql2 := `
-update sessions
-set
-    user_id=$2,
+		sql2 := `update sessions
+set user_id=$2,
     expires=$3
-where
-    session_token=$1
+where session_token = $1
 returning
     id, user_id, expires, session_token`
 
-		if err = transaction.QueryRow(
-			ctx, sql2, r.PathValue("sessionToken"), toUpdate.UserId, toUpdate.Expires,
-		).Scan(
+		if err = transaction.QueryRow(ctx, sql2, sessionToken, toUpdate.UserId, toUpdate.Expires).Scan(
 			&updatedSession.Id, &updatedSession.UserId, &updatedSession.Expires, &updatedSession.SessionToken,
 		); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			utils.HttpInternalServerError(w, r, err.Error())
 			return
 		}
 
 		if err = transaction.Commit(ctx); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			utils.HttpInternalServerError(w, r, err.Error())
 			return
 		}
 
-		res, err := json.Marshal(updatedSession)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		if _, err = w.Write(res); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+		if err = utils.Encode(w, http.StatusOK, updatedSession); err != nil {
+			utils.HttpInternalServerError(w, r, err.Error())
 			return
 		}
 	}

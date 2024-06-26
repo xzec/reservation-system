@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"net/http"
+	"rs/pkg/server/utils"
 )
 
 func UnlinkAccountHandler(pool *pgxpool.Pool) http.HandlerFunc {
@@ -15,15 +16,13 @@ func UnlinkAccountHandler(pool *pgxpool.Pool) http.HandlerFunc {
 
 		commandTag, err := pool.Exec(context.Background(), sql, provider, providerAccountId)
 		if err != nil {
-			http.Error(w, "Failed to unlink the account.", http.StatusInternalServerError)
+			utils.HttpInternalServerError(w, r, err.Error())
 			return
 		}
 
 		if commandTag.RowsAffected() == 0 {
-			http.Error(w, "Account not found.", http.StatusNotFound)
+			utils.HttpFormattedError(w, r, http.StatusNotFound, "account not found", nil)
 			return
 		}
-
-		w.Write([]byte("null"))
 	}
 }

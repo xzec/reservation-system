@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"net/http"
@@ -26,42 +25,35 @@ type linkAccountRequest struct {
 
 func LinkAccountHandler(pool *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var body linkAccountRequest
-
-		err := json.NewDecoder(r.Body).Decode(&body)
+		body, err := utils.Decode[linkAccountRequest](r)
 		if err != nil {
-			http.Error(w, "Failed to parse the request body."+err.Error(), http.StatusBadRequest)
+			utils.HttpFormattedError(w, r, http.StatusBadRequest, err.Error(), "failed to parse the request body")
 			return
 		}
 
 		if err = validateLinkAccountRequest(body); err != nil {
-			http.Error(w, "Invalid request body: "+err.Error(), http.StatusBadRequest)
+			utils.HttpFormattedError(w, r, http.StatusBadRequest, err.Error(), "invalid request body")
 			return
 		}
 
-		var account models.Account
-		sql := `
-insert into accounts(user_id, type, provider, provider_account_id, refresh_token, access_token, expires_at, id_token, scope, session_state, token_type)
-values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+		var newAccount models.Account
+		sql := `insert into accounts(user_id, type, provider, provider_account_id, refresh_token, access_token, expires_at, id_token,
+                     scope, session_state, token_type)
+values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 returning id, user_id, type, provider, provider_account_id, refresh_token, access_token, expires_at, id_token, scope, session_state, token_type`
 
 		err = pool.QueryRow(context.Background(), sql,
 			body.UserId, body.Type, body.Provider, body.ProviderAccountId, body.RefreshToken, body.AccessToken, body.ExpiresAt, body.IdToken, body.Scope, body.SessionState, body.TokenType,
 		).Scan(
-			&account.Id, &account.UserId, &account.Type, &account.Provider, &account.ProviderAccountId, &account.RefreshToken, &account.AccessToken, &account.ExpiresAt, &account.IdToken, &account.Scope, &account.SessionState, &account.TokenType,
+			&newAccount.Id, &newAccount.UserId, &newAccount.Type, &newAccount.Provider, &newAccount.ProviderAccountId, &newAccount.RefreshToken, &newAccount.AccessToken, &newAccount.ExpiresAt, &newAccount.IdToken, &newAccount.Scope, &newAccount.SessionState, &newAccount.TokenType,
 		)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			utils.HttpInternalServerError(w, r, err.Error())
 			return
 		}
 
-		res, err := json.Marshal(account)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		if _, err = w.Write(res); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+		if err = utils.Encode(w, http.StatusOK, newAccount); err != nil {
+			utils.HttpInternalServerError(w, r, err.Error())
 			return
 		}
 	}

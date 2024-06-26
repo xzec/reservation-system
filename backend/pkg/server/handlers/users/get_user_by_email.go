@@ -12,13 +12,12 @@ import (
 
 func GetUserByEmailHandler(pool *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var user models.User
+		email := r.PathValue("email")
 
 		sql := "select id, email, email_verified, name, image from users where email=$1"
 
-		err := pool.QueryRow(
-			context.Background(), sql, r.PathValue("email"),
-		).Scan(
+		var user models.User
+		err := pool.QueryRow(context.Background(), sql, email).Scan(
 			&user.Id, &user.Email, &user.EmailVerified, &user.Name, &user.Image,
 		)
 		if errors.Is(err, pgx.ErrNoRows) {

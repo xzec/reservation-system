@@ -2,12 +2,12 @@ package handlers
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"net/http"
 	"rs/pkg/server/models"
+	"rs/pkg/server/utils"
 )
 
 type useVerificationTokenRequest struct {
@@ -17,46 +17,39 @@ type useVerificationTokenRequest struct {
 
 func UseVerificationTokenHandler(pool *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var body useVerificationTokenRequest
-
-		err := json.NewDecoder(r.Body).Decode(&body)
+		body, err := utils.Decode[useVerificationTokenRequest](r)
 		if err != nil {
-			http.Error(w, "Failed to parse the request body:"+err.Error(), http.StatusBadRequest)
+			utils.HttpFormattedError(w, r, http.StatusBadRequest, err.Error(), "failed to parse the request body")
 			return
 		}
 
 		if err = validateUseVerificationTokenRequest(body); err != nil {
-			http.Error(w, "Invalid request body: "+err.Error(), http.StatusBadRequest)
+			utils.HttpFormattedError(w, r, http.StatusBadRequest, err.Error(), "invalid request body")
 			return
 		}
 
-		sql := `
-delete from verification_tokens
-where identifier=$1 and token=$2
+		sql := `delete
+from verification_tokens
+where identifier = $1
+  and token = $2
 returning identifier, expires, token`
 
 		var verificationToken models.VerificationToken
-		err = pool.QueryRow(
-			context.Background(), sql, body.Identifier, body.Token,
-		).Scan(
+		err = pool.QueryRow(context.Background(), sql, body.Identifier, body.Token).Scan(
 			&verificationToken.Identifier, &verificationToken.Expires, &verificationToken.Token,
 		)
 		if errors.Is(err, pgx.ErrNoRows) {
-			w.WriteHeader(http.StatusNotFound)
-			_, err = w.Write([]byte("null"))
+			utils.HttpFormattedError(w, r, http.StatusNotFound, err.Error(), nil)
 			return
 		}
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			utils.HttpInternalServerError(w, r, err.Error())
 			return
 		}
 
-		res, err := json.Marshal(verificationToken)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
-		if _, err = w.Write(res); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+		if err = utils.Encode(w, http.StatusOK, verificationToken); err != nil {
+			utils.HttpInternalServerError(w, r, err.Error())
+			return
 		}
 	}
 }
