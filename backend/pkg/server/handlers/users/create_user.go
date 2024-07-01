@@ -11,6 +11,7 @@ import (
 )
 
 type createUserRequest struct {
+	Id            *string `json:"id"`
 	Email         *string `json:"email"`
 	EmailVerified *string `json:"emailVerified"`
 	Name          *string `json:"name"`

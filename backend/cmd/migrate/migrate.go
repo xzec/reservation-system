@@ -24,13 +24,15 @@ func main() {
 
 	args := flags.Args()
 
-	if len(args) < 2 {
+	if len(args) < 1 {
 		flags.Usage()
 		return
 	}
-	dbstring, command := args[0], args[1]
+	command := args[0]
 
-	db, err := goose.OpenDBWithDriver("postgres", dbstring)
+	fmt.Println(os.Getenv("DATABASE_URL"), command, *dir)
+
+	db, err := goose.OpenDBWithDriver("postgres", os.Getenv("DATABASE_URL"))
 	if err != nil {
 		log.Fatalf("goose: failed to open DB: %v\n", err)
 	}
@@ -46,6 +48,7 @@ func main() {
 		arguments = append(arguments, args[3:]...)
 	}
 
+	fmt.Printf("Running goose %v\n", command)
 	if err = goose.RunContext(context.Background(), command, db, *dir, arguments...); err != nil {
 		log.Fatalf("goose %v: %v", command, err)
 	}

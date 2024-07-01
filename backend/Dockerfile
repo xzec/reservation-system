@@ -10,14 +10,10 @@ COPY /pkg/server /pkg/server
 
 RUN CGO_ENABLED=0 GOOS=linux go build -C /cmd/server -o /server .
 
-EXPOSE 8080
-
 FROM alpine:latest as final
-
-WORKDIR /
 
 COPY --from=build /server /server
 
-EXPOSE 8080
+EXPOSE 8081
 
 ENTRYPOINT ["/server"]
